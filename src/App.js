@@ -1,8 +1,6 @@
 import React, { useState, useCallback, useRef } from "react";
 import produce from "immer";
-
-const numRows = 50;
-const numCols = 50;
+import "./App.css";
 
 const operations = [
   [0, 1],
@@ -16,7 +14,17 @@ const operations = [
 ];
 
 function App() {
-  let [count, setCount] = useState(0);
+  // const [cols, setCols] = useState(105);
+  // const [rows, setRows] = useState(35);
+  const numRows = 35;
+  const numCols = 105;
+  // function handleRows(e) {
+  //   setRows(Number(e.target.value));
+  //   console.log(rows);
+  // }
+  // function handleCols(e) {
+  //   setCols(Number(e.target.value));
+  // }
   const generateEmptyGrid = () => {
     const rows = [];
     for (let i = 0; i < numRows; i++) {
@@ -30,7 +38,14 @@ function App() {
   });
 
   const [running, setRunning] = useState(false);
+  let [count, setCount] = useState(0);
+  const [speed, setSpeed] = useState(1000);
 
+  function changeInt(e) {
+    setSpeed(Number(e.target.value));
+    console.log(e.target.value);
+    console.log(speed);
+  }
   const runningRef = useRef(running);
   runningRef.current = running;
 
@@ -64,71 +79,127 @@ function App() {
       });
     });
 
-    setTimeout(runSimulation, 100);
-  }, []);
+    setTimeout(runSimulation, speed);
+  }, [speed]);
+
+  let rgb = [];
+  for (var i = 0; i < 3; i++) {
+    let r = Math.floor(Math.random() * 256);
+    rgb.push(r);
+  }
 
   return (
     <>
-      <h1>{`# of Generations ${count}`}</h1>
-      <button
-        onClick={() => {
-          setRunning(!running);
-          if (!running) {
-            runningRef.current = true;
-            runSimulation();
-          }
-        }}
-      >
-        {running ? "stop" : "start"}
-      </button>
-      <button
-        onClick={() => {
-          const rows = [];
-          for (let i = 0; i < numRows; i++) {
-            rows.push(
-              Array.from(Array(numCols), () => (Math.random() > 0.7 ? 1 : 0))
-            );
-          }
-
-          setGrid(rows);
-        }}
-      >
-        random
-      </button>
-      <button
-        onClick={() => {
-          setGrid(generateEmptyGrid());
-          setCount(0);
-        }}
-      >
-        clear
-      </button>
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: `repeat(${numCols}, 20px)`,
-        }}
-      >
-        {grid.map((rows, i) =>
-          rows.map((col, k) => (
-            <div
-              key={`${i}-${k}`}
+      <h1 style={{ textAlign: "center" }}>Conaway's Game Of Life</h1>
+      <section>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: `repeat(${numCols}, 20px)`,
+          }}
+        >
+          {grid.map((rows, i) =>
+            rows.map((col, k) => (
+              <div
+                id="cell"
+                key={`${i}-${k}`}
+                onClick={() => {
+                  const newGrid = produce(grid, (gridCopy) => {
+                    gridCopy[i][k] = grid[i][k] ? 0 : 1;
+                  });
+                  setGrid(newGrid);
+                }}
+                style={{
+                  width: "20px",
+                  height: "20px",
+                  border: `solid .5px rgb(${rgb})`,
+                  backgroundColor: grid[i][k] ? `rgb(${rgb})` : undefined,
+                }}
+              />
+            ))
+          )}
+        </div>
+        <div>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-evenly",
+            }}
+          >
+            <button
               onClick={() => {
-                const newGrid = produce(grid, (gridCopy) => {
-                  gridCopy[i][k] = grid[i][k] ? 0 : 1;
-                });
-                setGrid(newGrid);
+                setRunning(!running);
+                if (!running) {
+                  runningRef.current = true;
+                  runSimulation();
+                }
               }}
-              style={{
-                width: 20,
-                height: 20,
-                backgroundColor: grid[i][k] ? "red" : undefined,
-                border: "solid 1px black",
+            >
+              {running ? "STOP" : "START"}
+            </button>
+            <button
+              onClick={() => {
+                const rows = [];
+                for (let i = 0; i < numRows; i++) {
+                  rows.push(
+                    Array.from(Array(numCols), () =>
+                      Math.random() > 0.7 ? 1 : 0
+                    )
+                  );
+                }
+
+                setGrid(rows);
               }}
-            />
-          ))
-        )}
-      </div>
+            >
+              RANDOM
+            </button>
+            <button
+              onClick={() => {
+                setGrid(generateEmptyGrid());
+                setCount(0);
+              }}
+            >
+              CLEAR
+            </button>
+          </div>
+        </div>
+        <h2>Speed</h2>
+        <input
+          type="range"
+          min="0"
+          max="1000"
+          value={speed}
+          onChange={changeInt}
+          title={speed}
+        />
+        {/* <h2>Columns</h2>
+        <input type="number" value={cols} onChange={handleCols} name={cols} />
+        <h2>Rows</h2>
+        <input type="number" value={rows} onChange={handleRows} name={rows} /> */}
+        <h3>{`# of Generations ${count}`}</h3>
+
+        <div>
+          <h2>Rules</h2>
+          <ul>
+            <li>
+              Any live cell with fewer than two live neighbors dies, as if by
+              underpopulation.
+            </li>
+            <li>
+              Any live cell with two or three live neighbors lives on to the
+              next generation.
+            </li>
+            <li>
+              Any live cell with more than three live neighbors dies, as if by
+              overpopulation.
+            </li>
+            <li>
+              Any dead cell with exactly three live neighbors becomes a live
+              cell, as if by reproduction.
+            </li>
+          </ul>
+        </div>
+      </section>
     </>
   );
 }
